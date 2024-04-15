@@ -1,0 +1,91 @@
+﻿@page "/"
+
+@using System.Net.Http.Json
+@using LoyaltyPortal.Data 
+@inject MemberPointsService memberPointsService;
+
+
+<MudPaper Class="pa-8 ma-8"> 
+    <MudGrid>
+        <MudItem xs="6"> 
+            <MudTextField Value="CustomerID" T="string" Label="CustomerID" Variant="Variant.Outlined" ValueChanged="GetInteractions"></MudTextField>
+        </MudItem>
+        <MudItem xs="6"> 
+            <MudSelect    SelectedValuesChanged=@(() => GetInteractions(CustomerID))  T="string" Label="Archive Date" Variant="Variant.Outlined">
+                @foreach (DateTime d in ArchiveDates)
+                {
+                    <MudSelectItem Value="@(d.ToString())" />
+                }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Class="pa-16 ma-16">
+    <MudDataGrid Items="@Interactions"> 
+        <Columns>
+            <Column T="Interaction" Field="Date" Title="Date" />
+            <Column T="Interaction" Field="Name" />
+            <Column T="Interaction" Field="UserID" />
+            <Column T="Interaction" Field="Actions" />
+            <Column T="Interaction" Field="OrderID"/>
+            <Column T="Interaction" Field="Points"/>
+            <Column T="Interaction" Field="PointExpirationDate" />
+            <Column T="Interaction" Field="Reason" />
+            <Column T="Interaction" Field="OptInStatus" /> 
+        </Columns>
+        <NoRecordsContent>
+            <MudText>
+                There were no results for the specififed customer on that date!
+            </MudText>
+        </NoRecordsContent>
+    </MudDataGrid>
+</MudPaper>
+
+
+
+@code {
+    private List<Interaction> Interactions = new List<Interaction>(); 
+    private string CustomerID { get; set; } = "";
+    private String date { get; set; } = DateTime.Today.ToString();
+    private List<DateTime> ArchiveDates = new List<DateTime>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetInteractions("");
+    }
+
+    public List<DateTime> GetArchiveDates()
+    {
+        return new List<DateTime>(); 
+    }
+
+    public async Task GetInteractions(string customerID)
+    {
+        CustomerID = customerID;
+        Interactions.Clear();
+        ArchiveDates.Clear(); 
+        if (!string.IsNullOrEmpty(customerID))
+        {
+            var report = await memberPointsService.GetCustomerPointsReport(customerID, DateTime.Parse(date));
+
+            Interactions = report.Interactions ?? Interactions;
+            ArchiveDates = report.ArchiveDates ?? ArchiveDates;
+            if (ArchiveDates.Count > 0)
+            {
+                date = ArchiveDates.First().ToString();
+            }
+            else
+            {
+                date = DateTime.Now.ToString();
+                ArchiveDates.Add(DateTime.Now.AddDays(-1));
+            }
+        }
+        else
+        {
+            date = DateTime.Now.ToString();
+            ArchiveDates.Add(DateTime.Now.AddDays(-1));
+        }
+        StateHasChanged();
+    }
+} 
