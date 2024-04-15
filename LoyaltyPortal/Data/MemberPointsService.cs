@@ -24,11 +24,13 @@ namespace LoyaltyPortal.Data
 
             using (var conn = new SqlConnection(connectionString))
             {
-                if (conn.State == ConnectionState.Closed)
-                    conn.Open();
+               
 
                 try
                 {
+
+                    if (conn.State == ConnectionState.Closed)
+                        conn.Open();
                     // Using parameterized queries for security
                     var maxDate = (await conn.QueryAsync<DateTime>(maxDateQuery, new { CustomerID = customerID })).FirstOrDefault();
                     if (maxDate < archiveDate)
